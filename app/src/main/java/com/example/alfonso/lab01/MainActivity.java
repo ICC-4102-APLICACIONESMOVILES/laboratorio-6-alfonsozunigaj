@@ -24,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
 
     private DrawerLayout mDrawerLayout;
 
+    private NetworkManager networkManager;
+
     static final int LOG_IN_REQUEST = 1;
     static String EMAIL;
     static String PASSWORD;
@@ -34,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        networkManager = NetworkManager.getInstance(this);
 
         sharedPref = getPreferences(Context.MODE_PRIVATE);
         mDrawerLayout = findViewById(R.id.drawer_layout);
