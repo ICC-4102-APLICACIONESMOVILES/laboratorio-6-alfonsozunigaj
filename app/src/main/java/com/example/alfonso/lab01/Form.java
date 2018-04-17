@@ -7,9 +7,7 @@ import android.support.annotation.NonNull;
 
 import java.sql.Date;
 
-/**
- * Created by Alfonso on 03-04-2018.
- */
+
 @Entity
 public class Form {
     @NonNull

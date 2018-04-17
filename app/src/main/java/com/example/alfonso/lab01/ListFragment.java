@@ -46,7 +46,7 @@ public class ListFragment extends Fragment {
                 DATABASE_NAME).fallbackToDestructiveMigration().build();
         listView = (ListView) view.findViewById(R.id.list_form);
         dataModels = new ArrayList<>();
-        new Thread(new Runnable() {
+        Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 forms = formDatabase.formDao().getAll();
@@ -61,7 +61,13 @@ public class ListFragment extends Fragment {
                 }
                 adapter = new FormAdapter(dataModels, getActivity().getApplicationContext());
             }
-        }).start();
+        });
+        t.start();
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return view;
     }
 
@@ -72,10 +78,9 @@ public class ListFragment extends Fragment {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                Form dataModel = dataModels.get(position);
-
-                // Open fragment with form questions
+                QuestionFragment fragment = new QuestionFragment();
+                getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.content_frame,
+                        fragment).commit();
             }
         });
     }
@@ -85,7 +90,6 @@ public class ListFragment extends Fragment {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
         return super.onOptionsItemSelected(item);
     }
