@@ -33,6 +33,13 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -157,8 +164,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mPasswordView.setError(null);
 
         // Store values at the time of the login attempt.
-        String email = mEmailView.getText().toString();
-        String password = mPasswordView.getText().toString();
+        final String email = mEmailView.getText().toString();
+        final String password = mPasswordView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
@@ -193,19 +200,69 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         } else {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
-            Context context = getApplicationContext();
-            CharSequence text = "Log In Successful";
-            int duration = Toast.LENGTH_SHORT;
-            Toast toast = Toast.makeText(context, text, duration);
-            toast.show();
-            showProgress(true);
-            mAuthTask = new UserLoginTask(email, password);
-            mAuthTask.execute((Void) null);
-            Intent resultIntent = new Intent();
-            resultIntent.putExtra("email",email);
-            resultIntent.putExtra("password",password);
-            setResult(Activity.RESULT_OK, resultIntent);
+            try {
+                NetworkManager.getInstance(getBaseContext()).login(email,
+                        password, new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Context context = getApplicationContext();
+                        CharSequence text = "Log In Successful";
+                        int duration = Toast.LENGTH_SHORT;
+                        Toast toast = Toast.makeText(context, text, duration);
+                        toast.show();
+                        showProgress(true);
+                        mAuthTask = new UserLoginTask(email, password);
+                        mAuthTask.execute((Void) null);
+                        JSONObject headers = response.optJSONObject("headers");
+                        String token = headers.optString("Authorization", "");
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra("token",token);
+                        setResult(Activity.RESULT_OK, resultIntent);
+                        getForms();
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // TODO: Handle error
+                        System.out.println(error);
+                    }
+                });
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
             finish();
+        }
+    }
+
+    private void getForms(){
+        NetworkManager.getInstance(getBaseContext()).getForms(new Response.Listener<JSONObject>() {
+
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    JSONArray formsJSON = response.getJSONArray("0");
+                    parseJSONform(formsJSON);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // TODO: Handle error
+                System.out.println(error);
+            }
+        });
+    }
+
+    private void parseJSONform(JSONArray jsonArray) {
+        for(int i=0; i < jsonArray.length(); i++) {
+            //JSONObject jsonObject = jsonArray[i];
+            //Parseo cada elemento del jsonArray y creo objetos Forms, los envio a la db y cuando
+            //llame al fragment_list se ccreará la vista y listo... me quede sin tiempo
         }
     }
 

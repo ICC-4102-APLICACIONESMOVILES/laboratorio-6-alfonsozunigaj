@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
 
         EMAIL = spManager.getEmail(this);
         PASSWORD = spManager.getPassword(this);
-        if (EMAIL == null && PASSWORD == null) {
+        if (spManager.getToken(this) == null) {
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivityForResult(intent, LOG_IN_REQUEST);
         }
@@ -153,10 +153,7 @@ public class MainActivity extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == LOG_IN_REQUEST) {
             if (resultCode == RESULT_OK) {
-                EMAIL = data.getStringExtra("email");
-                PASSWORD = data.getStringExtra("password");
-
-                spManager.addData(this, EMAIL, PASSWORD);
+                spManager.addToken(this, data.getStringExtra("token"));
             }
         }
     }

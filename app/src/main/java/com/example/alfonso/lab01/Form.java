@@ -26,11 +26,15 @@ public class Form {
     @ColumnInfo(name = "description")
     private String description;
 
+    @ColumnInfo(name = "number_questions")
+    private int numberQuestions;
+
     public Form() {
         name = "";
         date = "";
         category = "";
         description = "";
+        numberQuestions = 0;
     }
 
     public int getId() { return id; }
@@ -43,5 +47,7 @@ public class Form {
     public void setCategory (String category) { this.category = category; }
     public String getDescription() { return description; }
     public void setDescription (String description) { this.description = description; }
+    public int getNumberQuestions() { return numberQuestions; }
+    public void setNumberQuestions (int numberQuestions) { this.numberQuestions = numberQuestions; }
 
 }
