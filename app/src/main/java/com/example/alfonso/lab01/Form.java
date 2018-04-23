@@ -50,4 +50,8 @@ public class Form {
     public int getNumberQuestions() { return numberQuestions; }
     public void setNumberQuestions (int numberQuestions) { this.numberQuestions = numberQuestions; }
 
+    @Override
+    public String toString() {
+        return this.name;
+    }
 }

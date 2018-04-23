@@ -4,9 +4,11 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.arch.persistence.room.Room;
 import android.content.Intent;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -40,6 +42,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Console;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,6 +57,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * Id to identity READ_CONTACTS permission request.
      */
     private static final int REQUEST_READ_CONTACTS = 0;
+
+    private static final String DATABASE_NAME = "forms_db";
 
     /**
      * A dummy authentication store containing known user names and passwords.
@@ -258,12 +263,53 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         });
     }
 
-    private void parseJSONform(JSONArray jsonArray) {
-        for(int i=0; i < jsonArray.length(); i++) {
-            //JSONObject jsonObject = jsonArray[i];
-            //Parseo cada elemento del jsonArray y creo objetos Forms, los envio a la db y cuando
-            //llame al fragment_list se ccreará la vista y listo... me quede sin tiempo
+    private void parseJSONform(final JSONArray jsonArray) {
+        final AppDatabase formDatabase = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
+                DATABASE_NAME).fallbackToDestructiveMigration().build();
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for(int i=0; i < jsonArray.length(); i++) {
+                    try {
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        Form form = new Form();
+                        String name = jsonObject.getString("name");
+                        String date = jsonObject.getString("created_at");
+                        JSONArray questions = jsonObject.getJSONArray("fieldsets");
+                        int numberQuestions = 0;
+                        for(int j = 0; j < questions.length(); j++) {
+                            try {
+                                JSONArray questions_array = questions.getJSONObject(j).getJSONArray("fields");
+                                numberQuestions += questions_array.length();
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        form.setName(name);
+                        form.setDate(date);
+                        form.setNumberQuestions(numberQuestions);
+                        form.setCategory("Report");
+                        form.setDescription("Aca un form bacan.");
+                        formDatabase.formDao().insert(form);
+                        System.out.print(form.toString());
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+
+                    //Parseo cada elemento del jsonArray y creo objetos Forms, los envio a la db y cuando
+                    //llame al fragment_list se ccreará la vista y listo... me quede sin tiempo
+                }
+            }
+        });
+
+        t.start();
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+
     }
 
     private boolean isEmailValid(String email) {
