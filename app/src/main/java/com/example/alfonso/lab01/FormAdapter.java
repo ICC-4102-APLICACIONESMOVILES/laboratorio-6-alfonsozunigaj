@@ -69,8 +69,8 @@ public class FormAdapter extends ArrayAdapter<Form> {
 
         viewHolder.txtName.setText(dataModel.getName());
         viewHolder.txtDate.setText(dataModel.getDate());
-        viewHolder.txtCategory.setText(dataModel.getCategory());
-        viewHolder.txtDescription.setText(dataModel.getDescription());
+        viewHolder.txtCategory.setText("N° of questions: " + dataModel.getNumberQuestions());
+        viewHolder.txtDescription.setText("");
 
         return convertView;
     }

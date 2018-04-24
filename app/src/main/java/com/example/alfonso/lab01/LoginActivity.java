@@ -57,7 +57,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * Id to identity READ_CONTACTS permission request.
      */
     private static final int REQUEST_READ_CONTACTS = 0;
-
+    private NetworkManager networkManager;
     private static final String DATABASE_NAME = "forms_db";
 
     /**
@@ -85,7 +85,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
-
+        networkManager = NetworkManager.getInstance(this);
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -206,7 +206,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             try {
-                NetworkManager.getInstance(getBaseContext()).login(email,
+                networkManager.login(email,
                         password, new Response.Listener<JSONObject>() {
 
                     @Override
@@ -219,10 +219,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         showProgress(true);
                         mAuthTask = new UserLoginTask(email, password);
                         mAuthTask.execute((Void) null);
-                        JSONObject headers = response.optJSONObject("headers");
-                        String token = headers.optString("Authorization", "");
                         Intent resultIntent = new Intent();
-                        resultIntent.putExtra("token",token);
+                        resultIntent.putExtra("token",networkManager.getToken());
                         setResult(Activity.RESULT_OK, resultIntent);
                         getForms();
                     }
@@ -242,7 +240,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void getForms(){
-        NetworkManager.getInstance(getBaseContext()).getForms(new Response.Listener<JSONObject>() {
+        networkManager.getForms(new Response.Listener<JSONObject>() {
 
             @Override
             public void onResponse(JSONObject response) {
@@ -276,15 +274,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         String name = jsonObject.getString("name");
                         String date = jsonObject.getString("created_at");
                         JSONArray questions = jsonObject.getJSONArray("fieldsets");
-                        int numberQuestions = 0;
-                        for(int j = 0; j < questions.length(); j++) {
-                            try {
-                                JSONArray questions_array = questions.getJSONObject(j).getJSONArray("fields");
-                                numberQuestions += questions_array.length();
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        }
+                        int numberQuestions = questions.length();
                         form.setName(name);
                         form.setDate(date);
                         form.setNumberQuestions(numberQuestions);
@@ -295,10 +285,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-
-
-                    //Parseo cada elemento del jsonArray y creo objetos Forms, los envio a la db y cuando
-                    //llame al fragment_list se ccreará la vista y listo... me quede sin tiempo
                 }
             }
         });

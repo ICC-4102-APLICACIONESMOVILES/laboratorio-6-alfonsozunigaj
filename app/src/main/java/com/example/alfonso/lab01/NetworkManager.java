@@ -100,6 +100,10 @@ public class NetworkManager {
         makeApiCall(Request.Method.GET, url, null,listener, errorListener);
     }
 
+    public String getToken() {
+        return token;
+    }
+
     private void makeApiCall(int method, String url, JSONObject payload, Response.Listener<JSONObject> listener,
                              Response.ErrorListener errorListener){
 
