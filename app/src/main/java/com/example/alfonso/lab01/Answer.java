@@ -4,6 +4,7 @@ import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;
 import android.arch.persistence.room.PrimaryKey;
+import android.location.Location;
 import android.support.annotation.NonNull;
 
 import static android.arch.persistence.room.ForeignKey.CASCADE;
@@ -41,10 +42,14 @@ public class Answer {
     @ColumnInfo(name = "answer_set_id")
     private int answerSetId;
 
-    public Answer(String answer_text, final int questionId, final int answerSetId) {
+    @ColumnInfo(name = "location")
+    private Location location;
+
+    public Answer(String answer_text, final int questionId, final int answerSetId, Location location) {
         this.answer_text = answer_text;
         this.questionId = questionId;
         this.answerSetId = answerSetId;
+        this.location = location;
     }
 
     public String getAnswer_text() {
