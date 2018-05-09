@@ -21,8 +21,14 @@ public interface FormDao {
     void insert(Form form);
 
     @Insert
+    void insertMultipleForms (List<Form> formList);
+
+    @Insert
     void insertAll(Form... forms);
 
     @Delete
     void delete(Form form);
+
+    @Query("DELETE FROM form;")
+    void deleteAllForms();
 }

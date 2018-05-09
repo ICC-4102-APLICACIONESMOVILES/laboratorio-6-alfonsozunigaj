@@ -9,6 +9,7 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -20,15 +21,16 @@ import android.widget.TextView;
 
 import org.w3c.dom.Text;
 
+import java.util.Objects;
+
 public class MainActivity extends AppCompatActivity {
 
     private DrawerLayout mDrawerLayout;
-
+    protected String token;
     private NetworkManager networkManager;
 
-    static final int LOG_IN_REQUEST = 1;
-    static String EMAIL;
-    static String PASSWORD;
+    private static final String DATABASE_NAME = "forms_db";
+    public AppDatabase appDatabase;
     static SPManager spManager = new SPManager();
     static SharedPreferences sharedPref;
 
@@ -39,16 +41,28 @@ public class MainActivity extends AppCompatActivity {
 
         networkManager = NetworkManager.getInstance(this);
 
-        sharedPref = getPreferences(Context.MODE_PRIVATE);
+        sharedPref = getApplicationContext().getSharedPreferences("com.example.lab2.PREFERENCE_FILE_KEY", Context.MODE_PRIVATE);
+        appDatabase = Room.databaseBuilder(getApplicationContext(),
+                AppDatabase.class, DATABASE_NAME).fallbackToDestructiveMigration().build();
+        token = sharedPref.getString("token", "");
+
+        if (Objects.equals(token, "")){
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            MainActivity.this.startActivity(intent);
+            finish();
+        }
+        networkManager.setToken(token);
+
         mDrawerLayout = findViewById(R.id.drawer_layout);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        ActionBar actionbar = getSupportActionBar();
-        actionbar.setDisplayHomeAsUpEnabled(true);
-        actionbar.setHomeAsUpIndicator(R.drawable.ic_menu);
 
         mDrawerLayout = findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, mDrawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mDrawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
 
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(
@@ -58,14 +72,7 @@ public class MainActivity extends AppCompatActivity {
                         // set item as selected to persist highlight
                         menuItem.setChecked(true);
 
-                        if(menuItem.getItemId() == R.id.nav_credentials) {
-                            CredentialsFragment fragment = new CredentialsFragment();
-                            fragment.setUpInfo(EMAIL, PASSWORD, sharedPref);
-                            getSupportFragmentManager().beginTransaction().replace(R.id.content_frame,
-                                    fragment).commit();
-                        }
-
-                        else if(menuItem.getItemId() == R.id.nav_form) {
+                        if(menuItem.getItemId() == R.id.nav_form) {
                             FormFragment fragment = new FormFragment();
                             getSupportFragmentManager().beginTransaction().replace(R.id.content_frame,
                                     fragment).commit();
@@ -93,13 +100,6 @@ public class MainActivity extends AppCompatActivity {
                         return true;
                     }
                 });
-
-        EMAIL = spManager.getEmail(this);
-        PASSWORD = spManager.getPassword(this);
-        if (spManager.getToken(this) == null) {
-            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-            startActivityForResult(intent, LOG_IN_REQUEST);
-        }
 
         mDrawerLayout.addDrawerListener(
                 new DrawerLayout.DrawerListener() {
@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.log_out_button:
                 sharedPref.edit().clear().commit();
                 Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                startActivityForResult(intent, LOG_IN_REQUEST);
+                startActivityForResult(intent, 0);
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == LOG_IN_REQUEST) {
+        if (requestCode == 0) {
             if (resultCode == RESULT_OK) {
                 spManager.addToken(this, data.getStringExtra("token"));
             }

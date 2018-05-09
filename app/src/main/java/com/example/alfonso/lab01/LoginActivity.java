@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.arch.persistence.room.Room;
 import android.content.Intent;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -58,7 +59,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      */
     private static final int REQUEST_READ_CONTACTS = 0;
     private NetworkManager networkManager;
+    private JSONArray jsonArray;
     private static final String DATABASE_NAME = "forms_db";
+    public AppDatabase appDatabase;
 
     /**
      * A dummy authentication store containing known user names and passwords.
@@ -82,6 +85,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        networkManager = NetworkManager.getInstance(this);
+
+        appDatabase = Room.databaseBuilder(getApplicationContext(),
+                AppDatabase.class, DATABASE_NAME).fallbackToDestructiveMigration().build();
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
@@ -206,47 +213,40 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             try {
-                networkManager.login(email,
-                        password, new Response.Listener<JSONObject>() {
-
+                networkManager.login(email, password, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        Context context = getApplicationContext();
-                        CharSequence text = "Log In Successful";
-                        int duration = Toast.LENGTH_SHORT;
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.show();
-                        showProgress(true);
-                        mAuthTask = new UserLoginTask(email, password);
-                        mAuthTask.execute((Void) null);
-                        Intent resultIntent = new Intent();
-                        resultIntent.putExtra("token",networkManager.getToken());
-                        setResult(Activity.RESULT_OK, resultIntent);
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        LoginActivity.this.startActivity(intent);
+                        Toast.makeText(getApplicationContext(), "Login Successfull", Toast.LENGTH_LONG).show();
+                        SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences("com.example.lab2.PREFERENCE_FILE_KEY", Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor =sharedPreferences.edit();
+                        editor.putString("token", networkManager.getToken());
+                        editor.apply();
                         getForms();
+                        finish();
                     }
                 }, new Response.ErrorListener() {
-
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         // TODO: Handle error
                         System.out.println(error);
+                        Toast.makeText(getApplicationContext(), "The credentials are invalid", Toast.LENGTH_LONG).show();
                     }
                 });
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            finish();
         }
     }
 
     private void getForms(){
         networkManager.getForms(new Response.Listener<JSONObject>() {
-
             @Override
             public void onResponse(JSONObject response) {
                 try {
-                    JSONArray formsJSON = response.getJSONArray("0");
-                    parseJSONform(formsJSON);
+                    jsonArray = response.getJSONArray("0");
+                    parseJSONform();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -261,40 +261,42 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         });
     }
 
-    private void parseJSONform(final JSONArray jsonArray) {
-        final AppDatabase formDatabase = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
-                DATABASE_NAME).fallbackToDestructiveMigration().build();
-        Thread t = new Thread(new Runnable() {
+    private void parseJSONform() throws JSONException {
+        String name;
+        String date;
+        String category;
+        String comment;
+        int questions;
+
+        category = "Categoria 1";
+        comment = "Comentario";
+
+        final List<Form> formsList =  new ArrayList<Form>();
+
+        Form form;
+
+        for (int i=0; i<jsonArray.length(); i++){
+            form = new Form();
+            name = jsonArray.getJSONObject(i).get("name").toString();
+            date = jsonArray.getJSONObject(i).get("created_at").toString();
+            questions = jsonArray.getJSONObject(i).getJSONArray("fieldsets").length();
+
+            form.setName(name);
+            form.setDate(date);
+            form.setDescription(comment);
+            form.setCategory(category);
+            form.setNumberQuestions(questions);
+
+            formsList.add(form);
+        }
+
+        new Thread(new Runnable() {
             @Override
             public void run() {
-                for(int i=0; i < jsonArray.length(); i++) {
-                    try {
-                        JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        Form form = new Form();
-                        String name = jsonObject.getString("name");
-                        String date = jsonObject.getString("created_at");
-                        JSONArray questions = jsonObject.getJSONArray("fieldsets");
-                        int numberQuestions = questions.length();
-                        form.setName(name);
-                        form.setDate(date);
-                        form.setNumberQuestions(numberQuestions);
-                        form.setCategory("Report");
-                        form.setDescription("Aca un form bacan.");
-                        formDatabase.formDao().insert(form);
-                        System.out.print(form.toString());
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
+                appDatabase.formDao().deleteAllForms();
+                appDatabase.formDao().insertMultipleForms(formsList);
             }
-        });
-
-        t.start();
-        try {
-            t.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        }) .start();
 
     }
 

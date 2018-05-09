@@ -42,14 +42,10 @@ public class Answer {
     @ColumnInfo(name = "answer_set_id")
     private int answerSetId;
 
-    @ColumnInfo(name = "location")
-    private Location location;
-
-    public Answer(String answer_text, final int questionId, final int answerSetId, Location location) {
+    public Answer(String answer_text, final int questionId, final int answerSetId) {
         this.answer_text = answer_text;
         this.questionId = questionId;
         this.answerSetId = answerSetId;
-        this.location = location;
     }
 
     public String getAnswer_text() {

@@ -36,6 +36,10 @@ public class NetworkManager {
         mRequestQueue = getRequestQueue();
     }
 
+    public void setToken(String token){
+        NetworkManager.token = token;
+    }
+
     public static synchronized NetworkManager getInstance(Context context) {
         if (mInstance == null) {
             mInstance = new NetworkManager(context);
