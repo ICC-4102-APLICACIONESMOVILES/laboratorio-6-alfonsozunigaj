@@ -48,7 +48,10 @@ public class QuestionFragment extends Fragment {
                             public void onSuccess(Location location) {
                                 // Got last known location. In some rare situations this can be null.
                                 if (location != null) {
-                                    // Logic to handle location object
+                                    System.out.println("latitude:");
+                                    System.out.println(location.getLatitude());
+                                    System.out.println("longitude:");
+                                    System.out.println(location.getLongitude());
                                 }
                             }
                         });
